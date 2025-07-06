@@ -1,0 +1,76 @@
+<context>
+# Overview
+The Workflow App is an internal management tool for the BDM team, designed to streamline task execution, client journey tracking, and approvals. The app is built with scalability in mind to support future departmental needs. The current phase focuses on a robust frontend in React.js, with backend/API integration planned for later.
+
+# Core Features
+- **Dashboard**: Summary cards for tasks, client journeys, and upcoming visits, with interactive tabs and micro-animations.
+- **Tasks Module**: Daily auto-refreshing task list with filters and status updates, including micro-interaction feedback.
+- **Client Journey Module**: Step tracker for client progress (Visit → Layout → Proposal → MAF → Onboarding), with animated transitions and file uploads.
+- **Layouts & Proposals**: Upload, track, and manage multiple layouts/proposals per visit, including template handling and approval status.
+- **MAF Module**: Digital form handling or PDF upload, with status tracking for sent/received/signed.
+- **Existing Clients Module**: Manage existing clients and initiate Client Change Forms (CCF) with approval flows.
+- **Notifications**: Email alerts for task assignments, approvals, and journey updates.
+- **Common Components**: Modular design for future admin panel and department expansion.
+
+# User Experience
+- **User Personas**:
+  - BDM: Manages their own tasks and client journeys, creates and updates proposals, layouts, and MAF forms.
+  - BDM TL: All BDM permissions plus oversight, monitoring, and approvals.
+  - Admin: Common admin module (future phase).
+- **Key User Flows**:
+  - Task management and completion
+  - Client journey progression
+  - File uploads and approvals
+  - Notifications for key events
+- **UI/UX Considerations**:
+  - Radix UI for accessibility and consistency
+  - Tailwind CSS for styling
+  - Framer Motion for transitions and micro-interactions
+  - Responsive, desktop-first design
+
+## AI Assistant Context Awareness
+
+The AI Assistant component is context-aware. It receives a `context` prop from each page or department (e.g., `bdm-dashboard`, `hr-dashboard`) and adapts its greeting, summary, and actions accordingly. This ensures users receive relevant, department-specific assistance throughout the application.
+</context>
+<PRD>
+# Technical Architecture
+- **Frontend**: React.js with Radix UI (shadcn), Tailwind CSS, and Framer Motion
+- **API Integration**: Placeholder for future ERP/CRM API connections (not in current phase)
+- **Backend**: Not in scope for this phase
+- **Infrastructure**: Modular component structure, scalable for future backend and admin modules
+
+# Development Roadmap
+- **MVP Requirements**:
+  - Dashboard with summary cards and tabs
+  - Tasks module with list, filters, and status updates
+  - Client journey module with step tracker and file uploads
+  - Layouts & proposals management
+  - MAF module for digital/PDF forms
+  - Existing clients management and CCF initiation
+  - Notification system (frontend triggers, backend integration later)
+  - Responsive UI with Radix UI, Tailwind, and Framer Motion
+- **Future Enhancements**:
+  - Backend/API integration for live data
+  - Admin panel and settings
+  - Mobile optimization
+  - Additional department modules
+
+# Logical Dependency Chain
+- Foundation: Set up React app, Tailwind, Radix UI, Framer Motion
+- Build core modules: Dashboard → Tasks → Client Journey → Layouts/Proposals → MAF → Existing Clients
+- Add notification triggers and micro-interactions
+- Prepare for future backend/API and admin modules
+
+# Risks and Mitigations
+- **Technical challenges**: Integrating advanced UI libraries and animations; mitigated by modular development and using established libraries.
+- **MVP scoping**: Focus on frontend and core flows, defer backend/API and admin to future phases.
+- **Resource constraints**: Modular design allows phased development and onboarding of new team members.
+
+# Appendix
+- **Research findings**: Radix UI and Framer Motion are well-supported for React and enable accessible, animated UIs.
+- **Technical specifications**: See tech stack and module breakdown above.
+
+## Icon Library
+
+This project uses the [lucide-react](https://lucide.dev/) icon library for all professional, modern icons in the UI. All dashboard and assistant icons are sourced from lucide-react to ensure a consistent, high-quality, and visually appealing interface.
+</PRD> 

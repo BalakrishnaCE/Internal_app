@@ -1,0 +1,146 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Repository and Initial Configuration",
+        "description": "Initialize the React.js project with required libraries and configuration for Radix UI, Tailwind CSS, and Framer Motion.",
+        "details": "Use npx create-react-app workflow-app. Install Radix UI (shadcn), Tailwind CSS, and Framer Motion. Configure Tailwind and Framer Motion for use with React. Set up basic project structure and linting with ESLint/Prettier.",
+        "testStrategy": "Verify project creation, library installation, and successful build. Check linting and formatting scripts.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Core UI Framework and Common Components",
+        "description": "Build foundational UI components and layout structure using Radix UI and Tailwind CSS.",
+        "details": "Create reusable components (e.g., buttons, cards, tabs, modals) using Radix UI and style with Tailwind. Establish a modular component structure for future expansion.",
+        "testStrategy": "Manual and snapshot testing of components. Ensure accessibility and responsive behavior.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Develop Dashboard Module",
+        "description": "Build the main dashboard with summary cards, interactive tabs, and micro-animations.",
+        "details": "Implement dashboard layout with summary cards for tasks, client journeys, and upcoming visits. Add interactive tabs and micro-animations using Framer Motion.",
+        "testStrategy": "Test dashboard rendering, tab switching, and animation effects. Validate responsive design.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement Tasks Module",
+        "description": "Develop the tasks list with auto-refresh, filters, status updates, and micro-interaction feedback.",
+        "details": "Build a task list component with auto-refresh logic, filter controls, and status updates. Add micro-interactions for task completion and status changes.",
+        "testStrategy": "Test task list rendering, filtering, status updates, and micro-interactions. Validate auto-refresh behavior.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Develop Client Journey Module",
+        "description": "Create a step tracker for client progress with animated transitions and file uploads.",
+        "details": "Implement a step tracker for client journey (Visit → Layout → Proposal → MAF → Onboarding). Add animated transitions between steps and file upload functionality.",
+        "testStrategy": "Test step progression, animation transitions, and file uploads. Validate responsive behavior.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Build Layouts & Proposals Management",
+        "description": "Enable upload, tracking, and management of layouts/proposals per visit, including template handling and approval status.",
+        "details": "Develop components for uploading, tracking, and managing multiple layouts/proposals per visit. Implement template handling and approval status indicators.",
+        "testStrategy": "Test file upload, template handling, and approval status updates. Validate management features.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement MAF Module",
+        "description": "Create digital form handling or PDF upload for MAF, with status tracking.",
+        "details": "Build a module for digital MAF form handling or PDF upload. Add status tracking for sent/received/signed.",
+        "testStrategy": "Test form submission, PDF upload, and status tracking. Validate status updates.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Develop Existing Clients Module",
+        "description": "Build management for existing clients and CCF initiation with approval flows.",
+        "details": "Create a module for managing existing clients and initiating Client Change Forms (CCF). Implement approval flows for CCF.",
+        "testStrategy": "Test client management, CCF initiation, and approval flows. Validate workflow.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Add Notification System (Frontend Triggers)",
+        "description": "Implement frontend notification triggers for task assignments, approvals, and journey updates.",
+        "details": "Build notification components and logic for frontend triggers (e.g., toast notifications). Prepare for future backend integration.",
+        "testStrategy": "Test notification display and triggering logic. Validate user feedback.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Ensure Responsive UI and Accessibility",
+        "description": "Validate and refine responsive design and accessibility across all modules.",
+        "details": "Review and test all modules for responsive behavior and accessibility compliance using Radix UI and Tailwind CSS. Address any issues.",
+        "testStrategy": "Manual and automated testing for responsiveness and accessibility. Use browser tools and accessibility checkers.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-04T11:02:09.625Z",
+      "updated": "2025-07-04T11:05:49.617Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
