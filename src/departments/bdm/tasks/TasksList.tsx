@@ -5,16 +5,77 @@ import { AIAssistant } from '../../../components/AIAssistant';
 
 // Example tasks data
 const initialTodaysTasks: Task[] = [
-  { id: '1', title: "Call Sarah Johnson", dueDate: "2024-06-12", status: "completed", comments: [] },
-  { id: '2', title: "Email Michael Chen", dueDate: "2024-06-07", status: "completed", comments: ["Waiting for reply"] },
+  {
+    id: '1',
+    title: "Call Sarah Johnson",
+    dueDate: "2024-06-12",
+    status: "completed",
+    comments: [],
+    primaryNumber: "+1 555-123-4567",
+    secondaryNumber: "+1 555-987-6543",
+    email: "sarah.johnson@acme.com",
+    leadId: "L-1001",
+    companyName: "Acme Corp",
+    planSummary: "Plan: Executive Desk (10), Meeting Room (2), Pantry (1). 12 months, $5,000/mo. All payments on time."
+  },
+  {
+    id: '2',
+    title: "Email Michael Chen",
+    dueDate: "2024-06-07",
+    status: "completed",
+    comments: ["Waiting for reply"],
+    primaryNumber: "+1 555-222-3333",
+    email: "michael.chen@globex.com",
+    leadId: "L-1002",
+    companyName: "Globex Inc",
+    planSummary: "Plan: Manager Cabin (3). 6 months, $2,500/mo. Awaiting agreement signature."
+  },
 ];
 const initialMissedTasks: Task[] = [
-  { id: '3', title: "Follow up with David Rodriguez", dueDate: "2024-06-05", status: "completed", comments: ["sds"] },
+  {
+    id: '3',
+    title: "Follow up with David Rodriguez",
+    dueDate: "2024-06-05",
+    status: "completed",
+    comments: ["sds"],
+    primaryNumber: "+1 555-444-5555",
+    email: "david.rodriguez@initech.com",
+    leadId: "L-1003",
+    companyName: "Initech",
+    planSummary: "Plan: Conference Room (1). Agreement ended last quarter."
+  },
+];
+
+// Rental Escalation Tasks Example
+const initialRentalEscalations: Task[] = [
+  {
+    id: 'e1',
+    title: "Rental Escalation: Acme Corp",
+    dueDate: "2024-07-01",
+    status: "pending",
+    primaryNumber: "+1 555-123-4567",
+    email: "sarah.johnson@acme.com",
+    leadId: "L-1001",
+    companyName: "Acme Corp",
+    planSummary: "Current Rent: $5,000/mo → New Rent: $5,250/mo (5% escalation). Notify client and update agreement."
+  },
+  {
+    id: 'e2',
+    title: "Rental Escalation: Wayne Enterprises",
+    dueDate: "2024-08-15",
+    status: "pending",
+    primaryNumber: "+1 555-666-7777",
+    email: "aisha.khan@wayne.com",
+    leadId: "L-1005",
+    companyName: "Wayne Enterprises",
+    planSummary: "Current Rent: $6,000/mo → New Rent: $6,300/mo (5% escalation). Prepare escalation notice."
+  },
 ];
 
 const TasksList: React.FC = () => {
   const [todaysTasks, setTodaysTasks] = useState(initialTodaysTasks);
   const [missedTasks, setMissedTasks] = useState(initialMissedTasks);
+  const [rentalEscalations, setRentalEscalations] = useState(initialRentalEscalations);
   const navigate = useNavigate ? useNavigate() : (path: string) => window.location.assign(path);
 
   const handleComplete = (id: string) => {
@@ -44,6 +105,14 @@ const TasksList: React.FC = () => {
         <TaskList
           title="Missed Followups"
           tasks={missedTasks}
+          onComplete={handleComplete}
+          onComment={handleComment}
+          onChangeDate={handleChangeDate}
+        />
+        <div className="my-4 sm:my-6" />
+        <TaskList
+          title="Rental Escalation Tasks"
+          tasks={rentalEscalations}
           onComplete={handleComplete}
           onComment={handleComment}
           onChangeDate={handleChangeDate}

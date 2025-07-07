@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { AIAssistant } from '@/components/AIAssistant';
-import { FileText, FileImage, File } from 'lucide-react';
+import { FileText, FileImage, File, Sparkles } from 'lucide-react';
 
 // Example clients data (should match ExistingClientsList)
 const clients = [
@@ -140,10 +140,22 @@ const ClientDetails: React.FC = () => {
 
   return (
     <div className="w-full max-w-2xl mx-auto py-8 px-2 sm:px-6 bg-background text-foreground min-h-screen">
-      {/* AI Summary Chat Bubble */}
+      {/* AI Summary Chat Bubble - Modern AI Overview Style */}
       <div className="flex items-start gap-2 mb-4">
-        <div className="bg-primary/10 text-primary rounded-xl px-4 py-3 text-sm shadow-sm flex-1">
-          {client.aiSummary}
+        <div className="flex items-start gap-3 w-full">
+          <div className="pt-1">
+            <span className="inline-flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-300 w-7 h-7">
+              <Sparkles className="w-5 h-5" aria-label="AI Overview" />
+            </span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">AI Overview</span>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100 rounded-xl px-4 py-3 text-sm shadow-sm border border-blue-200 dark:border-blue-800">
+              {client.aiSummary}
+            </div>
+          </div>
         </div>
       </div>
       <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

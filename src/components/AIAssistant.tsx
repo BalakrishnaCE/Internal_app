@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot } from 'lucide-react';
+import { Bot, Mic, Square } from 'lucide-react';
 
 const getAIGreeting = (context: string) => {
   switch (context) {
@@ -20,6 +20,49 @@ interface AIAssistantProps {
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({ context, summary }) => {
   const [open, setOpen] = useState(false);
+  // Voice recording state
+  const [recording, setRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const audioChunks = React.useRef<Blob[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const isSupported = typeof window !== 'undefined' && !!(navigator.mediaDevices && window.MediaRecorder);
+
+  const startRecording = async () => {
+    setError(null);
+    if (!isSupported) {
+      setError('Audio recording is not supported in this browser or connection.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      audioChunks.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioURL(url);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      recorder.start();
+      setRecording(true);
+    } catch (err) {
+      setError('Microphone access denied or unavailable.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+    }
+  };
+
   return (
     <>
       <button
@@ -51,6 +94,16 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ context, summary }) =>
                   </div>
                 </div>
               )}
+              {/* Voice message playback */}
+              {audioURL && (
+                <div className="flex items-start gap-2">
+                  <span className="mt-1"><Mic className="w-6 h-6 text-primary bg-white rounded-full border border-border p-1" /></span>
+                  <audio controls src={audioURL} className="ml-2 max-w-[80%]" />
+                </div>
+              )}
+              {error && (
+                <div className="text-xs text-destructive mb-1">{error}</div>
+              )}
               {/* Future: map chat messages here */}
             </div>
             {/* Sticky Input Bar */}
@@ -60,6 +113,25 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ context, summary }) =>
                 placeholder="Type your message... (coming soon)"
                 disabled
               />
+              {/* Voice record button */}
+              {!recording ? (
+                <button
+                  className="bg-primary text-primary-foreground rounded-full p-2 hover:bg-primary/90 disabled:opacity-50"
+                  onClick={startRecording}
+                  aria-label="Start voice recording"
+                  disabled={!isSupported}
+                >
+                  <Mic className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  className="bg-destructive text-destructive-foreground rounded-full p-2 animate-pulse"
+                  onClick={stopRecording}
+                  aria-label="Stop voice recording"
+                >
+                  <Square className="w-5 h-5" />
+                </button>
+              )}
               <button className="bg-primary text-primary-foreground rounded-full px-4 py-2 font-semibold opacity-60 cursor-not-allowed" disabled>Send</button>
             </div>
           </div>

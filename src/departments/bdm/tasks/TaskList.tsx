@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Clock, AlertCircle, Calendar, MessageCircle, ClipboardList, MoreVertical, Edit } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Calendar, MessageCircle, ClipboardList, MoreVertical, Edit, Phone as PhoneIcon, Mail as MailIcon, IdCard as IdCardIcon } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 export interface Task {
@@ -8,6 +8,12 @@ export interface Task {
   dueDate: string;
   status: 'pending' | 'completed' | 'missed';
   comments?: string[];
+  primaryNumber?: string;
+  secondaryNumber?: string;
+  email?: string;
+  leadId?: string;
+  companyName?: string;
+  planSummary?: string;
 }
 
 interface TaskListProps {
@@ -59,10 +65,32 @@ export const TaskList: React.FC<TaskListProps> = ({
               <span>{statusIcon(task.status)}</span>
               <div className="min-w-0">
                 <div className="font-semibold text-base sm:text-lg truncate">{task.title}</div>
-                <div className="flex items-center text-xs sm:text-sm text-muted-foreground gap-1">
+                <div className="flex flex-wrap gap-2 text-xs sm:text-sm text-muted-foreground mt-1">
+                  {task.primaryNumber && (
+                    <span className="flex items-center gap-1"><PhoneIcon className="w-3 h-3" />{task.primaryNumber}</span>
+                  )}
+                  {task.secondaryNumber && (
+                    <span className="flex items-center gap-1"><PhoneIcon className="w-3 h-3" />{task.secondaryNumber}</span>
+                  )}
+                  {task.email && (
+                    <span className="flex items-center gap-1"><MailIcon className="w-3 h-3" />{task.email}</span>
+                  )}
+                  {task.leadId && (
+                    <span className="flex items-center gap-1"><IdCardIcon className="w-3 h-3" />{task.leadId}</span>
+                  )}
+                </div>
+                {task.companyName && (
+                  <div className="text-xs text-muted-foreground mt-1">{task.companyName}</div>
+                )}
+                <div className="flex items-center text-xs sm:text-sm text-muted-foreground gap-1 mt-1">
                   <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                   Due: {task.dueDate}
                 </div>
+                {task.planSummary && (
+                  <div className="bg-blue-50 dark:bg-blue-900/40 rounded p-2 mt-2 text-xs italic text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800">
+                    {task.planSummary}
+                  </div>
+                )}
                 {task.comments && task.comments.length > 0 && (
                   <div className="flex items-center text-xs mt-1 text-muted-foreground gap-1">
                     <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />

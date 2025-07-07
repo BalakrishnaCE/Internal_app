@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle, Mic, Square, FileText, FilePlus2, Building2, MapPin, ListPlus, Loader2, Clock, Hourglass, Check, Send, ThumbsUp, Download } from 'lucide-react';
+import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle, Mic, Square, FileText, FilePlus2, Building2, MapPin, ListPlus, Loader2, Clock, Hourglass, Check, Send, ThumbsUp, Download, MoreVertical, Ban, AlertTriangle, Bookmark, Lock, Sparkles } from 'lucide-react';
 import { AIAssistant } from '@/components/AIAssistant';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 // Example prospects data (sync with Dashboard)
 const prospects = [
@@ -234,8 +235,8 @@ function SpacePlanSheet({ open, onClose, prospectName }: { open: boolean, onClos
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right">
-        <div className="bg-background w-full md:w-[600px] lg:w-[700px] max-w-full h-full flex flex-col shadow-2xl px-2 sm:px-6 py-4 gap-3">
+      <SheetContent side="right" className='w-full md:w-[600px] lg:w-[800px] max-w-full'>
+        <div className="bg-background">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border sticky top-0 bg-background z-10 px-2 sm:px-6 py-4">
             <h2 className="text-xl font-bold flex items-center gap-2">Space Plans for {prospectName}</h2>
@@ -357,9 +358,15 @@ const ProspectDetails: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [showLayoutSheet, setShowLayoutSheet] = useState(false);
+  const [blockAction, setBlockAction] = useState<string | null>(null); // 'soft-block' or 'fully-blocked'
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [selectedLayout, setSelectedLayout] = useState<string>('');
 
   // Find the prospect by ID
   const prospect = prospects.find(p => p.id === prospectId);
+
+  // Available layouts (from mockFiles)
+  const availableLayouts = mockFiles;
 
   // Handler for file input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -392,6 +399,21 @@ const ProspectDetails: React.FC = () => {
     setVisitFiles(files => files.filter((_, i) => i !== index));
   };
 
+  // Action handler: open modal to select layout
+  const handleAction = (action: string) => {
+    setBlockAction(action);
+    setShowBlockModal(true);
+    setSelectedLayout(availableLayouts[0] || '');
+  };
+
+  // Confirm block action
+  const handleConfirmBlock = () => {
+    alert(`${blockAction === 'soft-block' ? 'Soft Block' : 'Fully Blocked'}: ${selectedLayout}`);
+    setShowBlockModal(false);
+    setBlockAction(null);
+    setSelectedLayout('');
+  };
+
   if (!prospect) {
     return (
       <div className="w-full max-w-2xl mx-auto py-8 px-2 sm:px-6 bg-background text-foreground min-h-screen flex flex-col items-center justify-center">
@@ -411,7 +433,39 @@ const ProspectDetails: React.FC = () => {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6 py-8 px-2 sm:px-6 flex-1 w-full">
         {/* Main Journey Area */}
         <div className="flex-1 min-w-0 overflow-y-auto pb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-primary">Prospect Journey</h1>
+          {/* Header with Action Button */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary">Prospect Journey</h1>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button
+                  className="p-2 rounded-full bg-muted hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                  aria-label="Actions"
+                >
+                  <MoreVertical className="w-6 h-6 text-primary" />
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="z-50 min-w-[180px] rounded-lg border border-border bg-background py-1 shadow-xl">
+                  <DropdownMenu.Item
+                    className="flex items-center gap-2 px-4 py-2 text-sm cursor-pointer hover:bg-primary/10 rounded text-primary"
+                    onSelect={() => handleAction('soft-block')}
+                  >
+                    <Bookmark className="w-4 h-4 text-primary" />
+                    Soft Block
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    className="flex items-center gap-2 px-4 py-2 text-sm cursor-pointer hover:bg-muted/20 rounded text-foreground"
+                    onSelect={() => handleAction('fully-blocked')}
+                  >
+                    <Lock className="w-4 h-4 text-foreground" />
+                    Fully Blocked
+                  </DropdownMenu.Item>
+                  {/* Add more actions here as needed */}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
           <div className="mb-8">
             <div className="flex flex-col gap-4">
               {steps.map((step, idx) => {
@@ -517,17 +571,49 @@ const ProspectDetails: React.FC = () => {
           {showLayoutSheet && (
             <SpacePlanSheet open={showLayoutSheet} onClose={() => setShowLayoutSheet(false)} prospectName={prospect?.name || ''} />
           )}
+          {/* Block Layout Modal */}
+          {showBlockModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
+              <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-xs flex flex-col gap-4 relative border border-border">
+                <button className="absolute top-2 right-2 p-1 rounded hover:bg-muted" onClick={() => setShowBlockModal(false)}>
+                  <X className="w-5 h-5" />
+                </button>
+                <h2 className="text-xl font-bold mb-2 text-primary">{blockAction === 'soft-block' ? 'Soft Block' : 'Fully Blocked'} Space</h2>
+                <div>
+                  <label className="font-medium mb-1 block">Select Layout to Block</label>
+                  <select
+                    className="border rounded px-2 py-2 text-sm w-full mt-1"
+                    value={selectedLayout}
+                    onChange={e => setSelectedLayout(e.target.value)}
+                  >
+                    {availableLayouts.map((layout, idx) => (
+                      <option key={layout} value={layout}>{layout}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-2 w-full"
+                  onClick={handleConfirmBlock}
+                  disabled={!selectedLayout}
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         {/* Sidebar/Bottom Prospect Summary & AI Assistant */}
         <div className="w-full md:w-96 md:sticky md:top-8 md:self-start static z-auto bg-transparent flex flex-col gap-4 mt-6 md:mt-0 overflow-y-auto flex-shrink-0">
           <div className="bg-background rounded-xl shadow border border-border p-4 flex flex-col gap-4">
             {/* AI Summary Chat Bubble */}
-            <div className="flex items-start gap-2 mb-2">
-              <div className="flex-shrink-0 mt-1">
-                <MessageCircle className="w-6 h-6 text-primary" />
+            <div className="mb-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                <span className="font-semibold text-blue-700 text-base">AI Overview</span>
               </div>
-              <div className="bg-primary/10 text-primary rounded-xl px-4 py-3 text-sm shadow-sm flex-1">
-                {aiSummary}
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-2xl px-5 py-4 text-sm text-blue-900 dark:text-blue-100 shadow-sm flex items-start gap-2">
+                <span className="mt-1"><Sparkles className="w-5 h-5 text-blue-400" /></span>
+                <span className="whitespace-pre-line">{aiSummary}</span>
               </div>
             </div>
             {/* Client Factual Summary */}
