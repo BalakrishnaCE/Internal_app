@@ -59,23 +59,39 @@ const Dashboard: React.FC = () => {
           <h1 className="text-2xl sm:text-4xl font-extrabold text-primary mb-1">BDM Dashboard</h1>
           <p className="text-muted-foreground text-base sm:text-lg">Overview of your tasks, client journeys, and visits</p>
         </div>
-        {/* Hide the button in the header on mobile */}
+        <div className="flex gap-2">
+          {/* Hide the button in the header on mobile */}
+          <button
+            className="hidden sm:flex items-center justify-center gap-2 bg-primary text-primary-foreground px-3 py-2 rounded-md shadow hover:scale-105 transition-transform font-semibold text-sm"
+            onClick={() => navigate('/bdm/tasks')}
+          >
+            <ClipboardList className="w-4 h-4" />
+            <span>View All Tasks</span>
+          </button>
+          <button
+            className="hidden sm:flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-3 py-2 rounded-md shadow hover:scale-105 transition-transform font-semibold text-sm"
+            onClick={() => navigate('/bdm/clients')}
+          >
+            <span>View Clients</span>
+          </button>
+        </div>
+      </header>
+      {/* Show the buttons below the header on mobile */}
+      <div className="w-full sm:hidden flex flex-col gap-2 mb-4">
         <button
-          className="hidden sm:flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3 sm:px-6 rounded-lg shadow hover:scale-105 transition-transform font-semibold text-base sm:text-lg min-h-[44px]"
+          className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-3 py-2 rounded-md shadow hover:scale-105 transition-transform font-semibold text-sm"
           onClick={() => navigate('/bdm/tasks')}
         >
-          <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6" />
+          <ClipboardList className="w-4 h-4" />
           <span>View All Tasks</span>
         </button>
-      </header>
-      {/* Show the button below the header on mobile */}
-      <button
-        className="w-full sm:hidden flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-lg shadow hover:scale-105 transition-transform font-semibold text-base min-h-[44px] mb-4"
-        onClick={() => navigate('/bdm/tasks')}
-      >
-        <ClipboardList className="w-5 h-5" />
-        <span>View All Tasks</span>
-      </button>
+        <button
+          className="flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-3 py-2 rounded-md shadow hover:scale-105 transition-transform font-semibold text-sm"
+          onClick={() => navigate('/bdm/clients')}
+        >
+          <span>View Clients</span>
+        </button>
+      </div>
 
       {/* Visited Prospects Section */}
       <section className="mb-8 sm:mb-10">

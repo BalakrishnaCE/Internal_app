@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle } from 'lucide-react';
+import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle, Mic, Square, FileText, FilePlus2, Building2, MapPin, ListPlus, Loader2, Clock, Hourglass, Check, Send, ThumbsUp, Download } from 'lucide-react';
 import { AIAssistant } from '@/components/AIAssistant';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 // Example prospects data (sync with Dashboard)
 const prospects = [
@@ -61,6 +62,292 @@ const mockCompleted = ['visit', 'layout'];
 const mockLastComment = 'Discussed requirements and shared initial layout.';
 const mockFiles = ['layout.pdf'];
 
+// Status options for layout request
+const layoutStatusOptions = [
+  { value: 'requested', label: 'Requested', icon: <FilePlus2 className="w-4 h-4 text-primary" /> },
+  { value: 'pending', label: 'Pending', icon: <Clock className="w-4 h-4 text-muted-foreground" /> },
+  { value: 'started', label: 'Started Working', icon: <Loader2 className="w-4 h-4 animate-spin text-warning" /> },
+  { value: 'approval', label: 'Approval Pending', icon: <Send className="w-4 h-4 text-orange-500" /> },
+  { value: 'approved', label: 'Approved', icon: <ThumbsUp className="w-4 h-4 text-success" /> },
+];
+
+// Mock buildings/floors
+const mockBuildings = [
+  { id: 'b1', name: 'Alpha Tower', floors: ['1', '2', '3', '4'] },
+  { id: 'b2', name: 'Beta Plaza', floors: ['G', '1', '2'] },
+];
+
+// Item types and options
+const itemTypes = [
+  { value: 'workstation', label: 'Work Station', options: [
+    'Office Desk', 'Professional Desk', 'Executive Desk', 'Premium Desk', 'Custom (add size)'
+  ] },
+  { value: 'cabin', label: 'Cabin', options: [
+    'Manager Cabin', 'Custom Cabin (add details)'
+  ] },
+  { value: 'meeting', label: 'Meeting Room', options: [
+    '2 Seater', '4 Seater'
+  ] },
+  { value: 'conference', label: 'Conference Room', options: [
+    '6 Seater', '8 Seater', '10 Seater', '12 Seater', '14 Seater', '16 Seater', '18 Seater', '20 Seater'
+  ] },
+  { value: 'other', label: 'Other', options: [
+    'Pantry', 'Reception', 'Lobby', 'Waiting Area', 'Lab', 'Storage', 'Server Room', 'Custom (require size)'
+  ] },
+];
+
+// VoiceNoteRecorderInline: top-level so it can be used in both Visit modal and SpacePlanSheet
+function VoiceNoteRecorderInline({ onAudio }: { onAudio?: (url: string) => void }) {
+  const [recording, setRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const isSupported = typeof window !== 'undefined' && !!(navigator.mediaDevices && window.MediaRecorder);
+  const [error, setError] = useState<string | null>(null);
+  const startRecording = async () => {
+    setError(null);
+    if (!isSupported) {
+      setError('Audio recording is not supported in this browser or connection.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      audioChunks.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunks.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioURL(url);
+        if (onAudio) onAudio(url);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      recorder.start();
+      setRecording(true);
+    } catch (err) {
+      setError('Microphone access denied or unavailable.');
+    }
+  };
+  const stopRecording = () => {
+    if (mediaRecorder && recording) {
+      mediaRecorder.stop();
+      setRecording(false);
+    }
+  };
+  return (
+    <div className="flex flex-col gap-2 mt-2">
+      <label className="font-medium">Voice Note</label>
+      {error && <div className="text-xs text-destructive mb-1">{error}</div>}
+      <div className="flex items-center gap-3">
+        {isSupported ? (
+          !recording ? (
+            <button type="button" className="px-3 py-2 rounded bg-primary text-primary-foreground font-semibold hover:bg-primary/90 flex items-center gap-2" onClick={startRecording} aria-label="Start recording">
+              <Mic className="w-5 h-5" /> Record
+            </button>
+          ) : (
+            <button type="button" className="px-3 py-2 rounded bg-destructive text-destructive-foreground font-semibold hover:bg-destructive/90 animate-pulse flex items-center gap-2" onClick={stopRecording} aria-label="Stop recording">
+              <Square className="w-5 h-5" /> Stop
+            </button>
+          )
+        ) : (
+          <span className="text-xs text-muted-foreground">Audio recording is not supported in this browser or connection.</span>
+        )}
+        {audioURL && (
+          <audio controls src={audioURL} className="ml-2" />
+        )}
+      </div>
+      <span className="text-xs text-muted-foreground">You can record a short voice note to attach (not uploaded, just for demo).</span>
+    </div>
+  );
+}
+
+function ExistingFilesList({ files }: { files: { name: string, type: 'old' | 'new' }[] }) {
+  if (!files.length) return <div className="text-sm text-muted-foreground">No layout files uploaded yet.</div>;
+  return (
+    <ul className="mb-2">
+      {files.map((f, i) => (
+        <li key={i} className="flex items-center gap-2 text-sm mb-1">
+          <FileText className="w-4 h-4 text-primary" />
+          <span>{f.name}</span>
+          <span className={`ml-2 px-2 py-0.5 rounded text-xs ${f.type === 'new' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>{f.type === 'new' ? 'New' : 'Old'}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SpacePlanSheet({ open, onClose, prospectName }: { open: boolean, onClose: () => void, prospectName: string }) {
+  // Local state for all fields
+  const [files, setFiles] = useState<{ name: string, type: 'old' | 'new', selected?: boolean }[]>([
+    { name: 'spaceplan_v1.pdf', type: 'old', selected: false },
+    { name: 'spaceplan_v2.pdf', type: 'new', selected: true },
+  ]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showRequirement, setShowRequirement] = useState(false);
+  const [desc, setDesc] = useState('');
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
+  const [building, setBuilding] = useState('');
+  const [floor, setFloor] = useState('');
+  const [nearby, setNearby] = useState('');
+  const [items, setItems] = useState<any[]>([]);
+  const [status, setStatus] = useState('requested');
+
+  // Handle file upload (mock, just adds to list)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const filesArr = e.target.files ? Array.from(e.target.files) : [];
+    setFiles(prev => [
+      ...prev,
+      ...filesArr.map(f => ({ name: f.name, type: 'new' as const, selected: false }))
+    ]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Select active plan
+  const selectPlan = (idx: number) => {
+    setFiles(files.map((f, i) => ({ ...f, selected: i === idx })));
+  };
+
+  // Quick add items
+  const quickItems = [
+    { type: 'workstation', label: 'Workstation' },
+    { type: 'cabin', label: 'Cabin' },
+    { type: 'meeting', label: 'Meeting Room' },
+    { type: 'conference', label: 'Conference Room' },
+    { type: 'other', label: 'Other' },
+  ];
+  const addQuickItem = (type: string) => {
+    setItems([...items, { type, option: '', size: '', details: '', note: '' }]);
+  };
+  const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
+  const updateItem = (idx: number, field: string, value: string) => {
+    setItems(items.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+  };
+  // Building/floor options
+  const buildingObj = mockBuildings.find(b => b.id === building);
+  const floorOptions = buildingObj ? buildingObj.floors : [];
+  // Status icon
+  const statusObj = layoutStatusOptions.find(s => s.value === status);
+
+  return (
+    <Sheet open={open} onOpenChange={onClose}>
+      <SheetContent side="right">
+        <div className="bg-background w-full md:w-[600px] lg:w-[700px] max-w-full h-full flex flex-col shadow-2xl px-2 sm:px-6 py-4 gap-3">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border sticky top-0 bg-background z-10 px-2 sm:px-6 py-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">Space Plans for {prospectName}</h2>
+            <button onClick={onClose} className="p-2 rounded hover:bg-muted"><X className="w-5 h-5" /></button>
+          </div>
+          {/* Space Plan Files Section */}
+          <div className="py-4 border-b border-border flex-1 overflow-y-auto px-2 sm:px-6">
+            <div className="mb-2 font-semibold">Available Space Plans</div>
+            {files.length === 0 ? (
+              <div className="text-sm text-muted-foreground mb-4">No space plans uploaded yet.</div>
+            ) : (
+              <ul className="mb-4">
+                {files.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm mb-2">
+                    <button onClick={() => selectPlan(i)} className={`rounded-full border-2 w-5 h-5 flex items-center justify-center ${f.selected ? 'border-primary bg-primary/10' : 'border-border bg-background'}`}>{f.selected ? <Check className="w-4 h-4 text-primary" /> : null}</button>
+                    <FileText className="w-4 h-4 text-primary" />
+                    <span>{f.name}</span>
+                    <span className={`ml-2 px-2 py-0.5 rounded text-xs ${f.type === 'new' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>{f.type === 'new' ? 'New' : 'Old'}</span>
+                    <button className="ml-auto p-1 rounded hover:bg-muted" title="Download"><Download className="w-4 h-4" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex items-center gap-2 mb-4">
+              <input type="file" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" id="layout-upload-sheet" />
+              <button type="button" className="px-3 py-2 rounded bg-muted text-foreground hover:bg-muted/80 flex items-center gap-2" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                <Upload className="w-5 h-5" /> Upload New Plan
+              </button>
+            </div>
+            <div className="mb-4">
+              <button className="px-4 py-2 rounded bg-primary text-primary-foreground font-semibold hover:bg-primary/90" onClick={() => setShowRequirement(true)} disabled={showRequirement}>Add New Requirement</button>
+            </div>
+            {/* Requirement Form */}
+            {showRequirement && (
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="mb-2 font-semibold">New Layout Requirement</div>
+                <textarea className="border rounded px-2 py-2 text-sm focus:ring-2 focus:ring-primary min-h-[80px] w-full mb-2" placeholder="Describe what's required for the new layout..." value={desc} onChange={e => setDesc(e.target.value)} />
+                <VoiceNoteRecorderInline />
+                <div className="flex flex-wrap gap-4 mt-2 mb-2">
+                  <div>
+                    <label className="font-medium">Building</label>
+                    <select className="border rounded px-2 py-2 text-sm w-40" value={building} onChange={e => { setBuilding(e.target.value); setFloor(''); }}>
+                      <option value="">Select Building</option>
+                      {mockBuildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-medium">Floor</label>
+                    <select className="border rounded px-2 py-2 text-sm w-32" value={floor} onChange={e => setFloor(e.target.value)} disabled={!building}>
+                      <option value="">Select Floor</option>
+                      {floorOptions.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-medium">Nearby Place</label>
+                    <input className="border rounded px-2 py-2 text-sm w-48" placeholder="e.g. next to server room" value={nearby} onChange={e => setNearby(e.target.value)} />
+                  </div>
+                </div>
+                <div className="mb-2">
+                  <label className="font-medium mb-1">Quick Add Items</label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {quickItems.map(q => (
+                      <button key={q.type} type="button" className="px-3 py-1 rounded-full border border-primary text-primary bg-background hover:bg-primary/10 text-xs font-semibold" onClick={() => addQuickItem(q.type)}>{q.label}</button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {items.map((item, idx) => {
+                      const typeObj = itemTypes.find(t => t.value === item.type);
+                      return (
+                        <div key={idx} className="flex flex-col gap-2 border border-border bg-muted rounded-lg p-3 mb-2 relative">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {typeObj ? typeObj.label : item.type}
+                              {typeObj && typeObj.options.length > 0 && (
+                                <select className="ml-2 border rounded px-1 py-0.5 text-xs w-full sm:w-auto" value={item.option} onChange={e => updateItem(idx, 'option', e.target.value)}>
+                                  <option value="">Select Option</option>
+                                  {typeObj.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                              )}
+                              {/* Custom fields for certain types/options */}
+                              {item.type === 'workstation' && item.option === 'Custom (add size)' && (
+                                <input className="border rounded px-1 py-0.5 text-xs ml-1 w-full sm:w-auto" placeholder="Custom size" value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)} />
+                              )}
+                              {item.type === 'cabin' && item.option === 'Custom Cabin (add details)' && (
+                                <input className="border rounded px-1 py-0.5 text-xs ml-1 w-full sm:w-auto" placeholder="Details" value={item.details} onChange={e => updateItem(idx, 'details', e.target.value)} />
+                              )}
+                              {item.type === 'other' && (item.option === 'Custom (require size)' || item.option) && (
+                                <input className="border rounded px-1 py-0.5 text-xs ml-1 w-full sm:w-auto" placeholder="Size/details" value={item.size} onChange={e => updateItem(idx, 'size', e.target.value)} />
+                              )}
+                            </div>
+                            <button type="button" className="px-1 py-0.5 rounded-full bg-destructive/10 text-destructive self-start" onClick={() => removeItem(idx)} title="Remove item"><X className="w-3 h-3" /></button>
+                          </div>
+                          <textarea className="border rounded px-1 py-1 text-xs w-full mt-1" placeholder="Add note for this item..." value={item.note || ''} onChange={e => updateItem(idx, 'note', e.target.value)} rows={2} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-2">
+                  <div className="font-medium">Status:</div>
+                  {statusObj && <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-muted text-xs font-semibold">{statusObj.icon} {statusObj.label}</span>}
+                </div>
+                <button className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 font-semibold mt-4 w-full" onClick={() => { setShowRequirement(false); }}>Save Requirement</button>
+              </div>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 const ProspectDetails: React.FC = () => {
   const { prospectId } = useParams<{ prospectId: string }>();
   const navigate = useNavigate();
@@ -69,6 +356,7 @@ const ProspectDetails: React.FC = () => {
   const [visitFiles, setVisitFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [showLayoutSheet, setShowLayoutSheet] = useState(false);
 
   // Find the prospect by ID
   const prospect = prospects.find(p => p.id === prospectId);
@@ -107,13 +395,8 @@ const ProspectDetails: React.FC = () => {
   if (!prospect) {
     return (
       <div className="w-full max-w-2xl mx-auto py-8 px-2 sm:px-6 bg-background text-foreground min-h-screen flex flex-col items-center justify-center">
-        <button
-          className="mb-6 px-4 py-2 rounded bg-muted text-foreground hover:bg-muted/80 font-semibold self-start"
-          onClick={() => navigate('/bdm/dashboard')}
-        >
-          ← Back to Dashboard
-        </button>
-        <div className="text-xl font-bold text-red-600">Prospect not found</div>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-primary">Prospect Journey</h1>
+        <div className="text-xl font-bold text-destructive">Prospect not found</div>
       </div>
     );
   }
@@ -124,34 +407,32 @@ const ProspectDetails: React.FC = () => {
   const aiSummary = `Here's a quick summary of your journey with ${prospect.name} so far: Steps completed: ${mockCompleted.join(', ')}. Last comment: "${mockLastComment}". Files shared: ${mockFiles.join(', ')}.`;
 
   return (
-    <div className="w-full min-h-screen bg-background text-foreground">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6 py-8 px-2 sm:px-6">
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-6 py-8 px-2 sm:px-6 flex-1 w-full">
         {/* Main Journey Area */}
-        <div className="flex-1 min-w-0">
-          <button
-            className="mb-6 px-4 py-2 rounded bg-muted text-foreground hover:bg-muted/80 font-semibold"
-            onClick={() => navigate('/bdm/dashboard')}
-          >
-            ← Back to Dashboard
-          </button>
+        <div className="flex-1 min-w-0 overflow-y-auto pb-4">
           <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-primary">Prospect Journey</h1>
           <div className="mb-8">
             <div className="flex flex-col gap-4">
               {steps.map((step, idx) => {
                 const completed = mockCompleted.includes(step.key);
                 const isVisit = step.key === 'visit';
+                const isLayout = step.key === 'layout';
                 return (
                   <button
                     key={step.key}
                     className={`flex items-center w-full px-4 py-3 rounded-lg border transition-colors shadow-sm text-left gap-3
-                      ${completed ? 'bg-green-50 border-green-200' : 'bg-card border-border'}
-                      hover:bg-muted ${isVisit ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
-                    onClick={() => isVisit && setShowVisitModal(true)}
-                    disabled={!isVisit}
+                      ${completed ? 'bg-success/10 border-success/20' : 'bg-card border-border'}
+                      hover:bg-muted ${isVisit || isLayout ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+                    onClick={() => {
+                      if (isVisit) setShowVisitModal(true);
+                      if (isLayout) setShowLayoutSheet(true);
+                    }}
+                    disabled={!(isVisit || isLayout)}
                   >
                     <span>
                       {completed ? (
-                        <CheckCircle className="w-6 h-6 text-green-600" />
+                        <CheckCircle className="w-6 h-6 text-success" />
                       ) : (
                         <Circle className="w-6 h-6 text-muted-foreground" />
                       )}
@@ -168,19 +449,20 @@ const ProspectDetails: React.FC = () => {
           </div>
           {/* Visit Step Modal */}
           {showVisitModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md flex flex-col gap-4 relative">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
+              <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md flex flex-col gap-4 relative">
                 <button className="absolute top-2 right-2 p-1 rounded hover:bg-muted" onClick={() => setShowVisitModal(false)}>
                   <X className="w-5 h-5" />
                 </button>
                 <h2 className="text-xl font-bold mb-2 text-primary">Visit Step</h2>
                 <label className="font-medium mb-1">Descriptive Comments</label>
                 <textarea
-                  className="border rounded px-2 py-2 text-sm focus:ring-2 focus:ring-primary min-h-[80px]"
+                  className="border border-border rounded px-2 py-2 text-sm focus:ring-2 focus:ring-primary min-h-[80px] bg-background text-foreground"
                   placeholder="Add comments about the visit..."
                   value={visitComment}
                   onChange={e => setVisitComment(e.target.value)}
                 />
+                <VoiceNoteRecorderInline />
                 <label className="font-medium mb-1">Upload Files</label>
                 <div
                   className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${dragActive ? 'border-primary bg-primary/10' : 'border-muted'}`}
@@ -206,10 +488,10 @@ const ProspectDetails: React.FC = () => {
                 {visitFiles.length > 0 && (
                   <ul className="text-xs text-muted-foreground mb-2">
                     {visitFiles.map((file, i) => (
-                      <li key={i} className="flex items-center gap-2 justify-between border-b last:border-b-0 py-1">
-                        <span className="flex items-center gap-1"><FilePlus className="w-4 h-4" /> {file.name}</span>
+                      <li key={i} className="flex items-center gap-2 justify-between border-b border-border last:border-b-0 py-1">
+                        <span className="flex items-center gap-1"><FilePlus className="w-4 h-4 text-primary" /> {file.name}</span>
                         <button
-                          className="text-red-500 hover:text-red-700 px-2 py-1 rounded"
+                          className="text-destructive hover:text-destructive/80 px-2 py-1 rounded"
                           onClick={() => handleRemoveFile(i)}
                           aria-label={`Remove file ${file.name}`}
                         >
@@ -231,16 +513,20 @@ const ProspectDetails: React.FC = () => {
               </div>
             </div>
           )}
+          {/* Layout Step Sheet */}
+          {showLayoutSheet && (
+            <SpacePlanSheet open={showLayoutSheet} onClose={() => setShowLayoutSheet(false)} prospectName={prospect?.name || ''} />
+          )}
         </div>
         {/* Sidebar/Bottom Prospect Summary & AI Assistant */}
-        <div className="md:w-96 w-full md:sticky md:top-8 md:self-start fixed bottom-0 left-0 right-0 z-40 md:z-auto bg-transparent md:bg-transparent flex flex-col gap-4">
-          <div className="bg-white rounded-xl shadow border border-border p-4 flex flex-col gap-4">
+        <div className="w-full md:w-96 md:sticky md:top-8 md:self-start static z-auto bg-transparent flex flex-col gap-4 mt-6 md:mt-0 overflow-y-auto flex-shrink-0">
+          <div className="bg-background rounded-xl shadow border border-border p-4 flex flex-col gap-4">
             {/* AI Summary Chat Bubble */}
             <div className="flex items-start gap-2 mb-2">
               <div className="flex-shrink-0 mt-1">
                 <MessageCircle className="w-6 h-6 text-primary" />
               </div>
-              <div className="bg-blue-50 text-blue-900 rounded-xl px-4 py-3 text-sm shadow-sm flex-1">
+              <div className="bg-primary/10 text-primary rounded-xl px-4 py-3 text-sm shadow-sm flex-1">
                 {aiSummary}
               </div>
             </div>
@@ -257,9 +543,9 @@ const ProspectDetails: React.FC = () => {
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-semibold border self-start
-                ${prospect.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                  prospect.status === 'In Progress' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                  'bg-gray-100 text-gray-700 border-gray-200'}`}
+                ${prospect.status === 'Completed' ? 'bg-primary/10 text-primary border-primary/20' :
+                  prospect.status === 'In Progress' ? 'bg-warning/10 text-warning border-warning/20' :
+                  'bg-muted text-muted-foreground border-border'}`}
             >
               {prospect.status}
             </span>
