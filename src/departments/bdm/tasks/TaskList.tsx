@@ -22,6 +22,8 @@ interface TaskListProps {
   onComplete: (id: string) => void;
   onComment: (id: string, comment: string) => void;
   onChangeDate: (id: string, newDate: string) => void;
+  onTaskClick?: (task: Task) => void;
+  hidePlanSummary?: boolean;
 }
 
 const statusIcon = (status: Task['status']) => {
@@ -41,6 +43,8 @@ export const TaskList: React.FC<TaskListProps> = ({
   onComplete,
   onComment,
   onChangeDate,
+  onTaskClick,
+  hidePlanSummary = false,
 }) => {
   const [commentInput, setCommentInput] = useState<{ [id: string]: string }>({});
   const [showCommentModal, setShowCommentModal] = useState<string | null>(null);
@@ -59,7 +63,24 @@ export const TaskList: React.FC<TaskListProps> = ({
         {tasks.map(task => (
           <li
             key={task.id}
-            className="flex flex-col gap-3 sm:flex-row sm:items-center bg-background rounded-lg shadow p-3 sm:p-4 hover:shadow-md transition-shadow border border-border"
+            className={`flex flex-col gap-3 sm:flex-row sm:items-center bg-background rounded-lg shadow p-3 sm:p-4 hover:shadow-md transition-shadow border border-border ${onTaskClick ? 'cursor-pointer hover:bg-muted/30' : ''}`}
+            onClick={onTaskClick ? (e) => {
+              if (
+                (e.target as HTMLElement).closest('button, [role="menu"], [role="dialog"]')
+              ) return;
+              onTaskClick(task);
+            } : undefined}
+            {...(onTaskClick ? {
+              tabIndex: 0,
+              role: 'button',
+              'aria-label': `Open task ${task.title}`,
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onTaskClick(task);
+                }
+              }
+            } : {})}
           >
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               <span>{statusIcon(task.status)}</span>
@@ -86,7 +107,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                   <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                   Due: {task.dueDate}
                 </div>
-                {task.planSummary && (
+                {task.planSummary && !hidePlanSummary && (
                   <div className="bg-blue-50 dark:bg-blue-900/40 rounded p-2 mt-2 text-xs italic text-blue-900 dark:text-blue-100 border border-blue-200 dark:border-blue-800">
                     {task.planSummary}
                   </div>

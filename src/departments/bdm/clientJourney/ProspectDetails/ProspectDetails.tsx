@@ -4,6 +4,12 @@ import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle, Mi
 import { AIAssistant } from '@/components/AIAssistant';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import VisitStep from '../Visits/VisitStep';
+import LayoutStep from '../Layouts/LayoutStep';
+import VoiceNoteRecorderInline from '../shared/VoiceNoteRecorderInline';
+import ProposalStep from '../Proposals/ProposalStep';
+import MAFStep from '../MAF/MAFStep';
+import OnboardingStep from '../Onboarding/OnboardingStep';
 
 // Example prospects data (sync with Dashboard)
 const prospects = [
@@ -96,74 +102,6 @@ const itemTypes = [
     'Pantry', 'Reception', 'Lobby', 'Waiting Area', 'Lab', 'Storage', 'Server Room', 'Custom (require size)'
   ] },
 ];
-
-// VoiceNoteRecorderInline: top-level so it can be used in both Visit modal and SpacePlanSheet
-function VoiceNoteRecorderInline({ onAudio }: { onAudio?: (url: string) => void }) {
-  const [recording, setRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState<string | null>(null);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
-  const isSupported = typeof window !== 'undefined' && !!(navigator.mediaDevices && window.MediaRecorder);
-  const [error, setError] = useState<string | null>(null);
-  const startRecording = async () => {
-    setError(null);
-    if (!isSupported) {
-      setError('Audio recording is not supported in this browser or connection.');
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      setMediaRecorder(recorder);
-      audioChunks.current = [];
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunks.current.push(e.data);
-      };
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
-        setAudioURL(url);
-        if (onAudio) onAudio(url);
-        stream.getTracks().forEach(track => track.stop());
-      };
-      recorder.start();
-      setRecording(true);
-    } catch (err) {
-      setError('Microphone access denied or unavailable.');
-    }
-  };
-  const stopRecording = () => {
-    if (mediaRecorder && recording) {
-      mediaRecorder.stop();
-      setRecording(false);
-    }
-  };
-  return (
-    <div className="flex flex-col gap-2 mt-2">
-      <label className="font-medium">Voice Note</label>
-      {error && <div className="text-xs text-destructive mb-1">{error}</div>}
-      <div className="flex items-center gap-3">
-        {isSupported ? (
-          !recording ? (
-            <button type="button" className="px-3 py-2 rounded bg-primary text-primary-foreground font-semibold hover:bg-primary/90 flex items-center gap-2" onClick={startRecording} aria-label="Start recording">
-              <Mic className="w-5 h-5" /> Record
-            </button>
-          ) : (
-            <button type="button" className="px-3 py-2 rounded bg-destructive text-destructive-foreground font-semibold hover:bg-destructive/90 animate-pulse flex items-center gap-2" onClick={stopRecording} aria-label="Stop recording">
-              <Square className="w-5 h-5" /> Stop
-            </button>
-          )
-        ) : (
-          <span className="text-xs text-muted-foreground">Audio recording is not supported in this browser or connection.</span>
-        )}
-        {audioURL && (
-          <audio controls src={audioURL} className="ml-2" />
-        )}
-      </div>
-      <span className="text-xs text-muted-foreground">You can record a short voice note to attach (not uploaded, just for demo).</span>
-    </div>
-  );
-}
 
 function ExistingFilesList({ files }: { files: { name: string, type: 'old' | 'new' }[] }) {
   if (!files.length) return <div className="text-sm text-muted-foreground">No layout files uploaded yet.</div>;
@@ -361,6 +299,9 @@ const ProspectDetails: React.FC = () => {
   const [blockAction, setBlockAction] = useState<string | null>(null); // 'soft-block' or 'fully-blocked'
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [selectedLayout, setSelectedLayout] = useState<string>('');
+  const [showProposalSheet, setShowProposalSheet] = useState(false);
+  const [showMAFSheet, setShowMAFSheet] = useState(false);
+  const [showOnboardingSheet, setShowOnboardingSheet] = useState(false);
 
   // Find the prospect by ID
   const prospect = prospects.find(p => p.id === prospectId);
@@ -472,17 +413,23 @@ const ProspectDetails: React.FC = () => {
                 const completed = mockCompleted.includes(step.key);
                 const isVisit = step.key === 'visit';
                 const isLayout = step.key === 'layout';
+                const isProposal = step.key === 'proposal';
+                const isMAF = step.key === 'maf';
+                const isOnboarding = step.key === 'onboarding';
                 return (
                   <button
                     key={step.key}
                     className={`flex items-center w-full px-4 py-3 rounded-lg border transition-colors shadow-sm text-left gap-3
                       ${completed ? 'bg-success/10 border-success/20' : 'bg-card border-border'}
-                      hover:bg-muted ${isVisit || isLayout ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+                      hover:bg-muted ${isVisit || isLayout || isProposal || isMAF || isOnboarding ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
                     onClick={() => {
                       if (isVisit) setShowVisitModal(true);
                       if (isLayout) setShowLayoutSheet(true);
+                      if (isProposal) setShowProposalSheet(true);
+                      if (isMAF) setShowMAFSheet(true);
+                      if (isOnboarding) setShowOnboardingSheet(true);
                     }}
-                    disabled={!(isVisit || isLayout)}
+                    disabled={!(isVisit || isLayout || isProposal || isMAF || isOnboarding)}
                   >
                     <span>
                       {completed ? (
@@ -502,75 +449,40 @@ const ProspectDetails: React.FC = () => {
             </div>
           </div>
           {/* Visit Step Modal */}
-          {showVisitModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
-              <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md flex flex-col gap-4 relative">
-                <button className="absolute top-2 right-2 p-1 rounded hover:bg-muted" onClick={() => setShowVisitModal(false)}>
-                  <X className="w-5 h-5" />
-                </button>
-                <h2 className="text-xl font-bold mb-2 text-primary">Visit Step</h2>
-                <label className="font-medium mb-1">Descriptive Comments</label>
-                <textarea
-                  className="border border-border rounded px-2 py-2 text-sm focus:ring-2 focus:ring-primary min-h-[80px] bg-background text-foreground"
-                  placeholder="Add comments about the visit..."
-                  value={visitComment}
-                  onChange={e => setVisitComment(e.target.value)}
-                />
-                <VoiceNoteRecorderInline />
-                <label className="font-medium mb-1">Upload Files</label>
-                <div
-                  className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${dragActive ? 'border-primary bg-primary/10' : 'border-muted'}`}
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  tabIndex={0}
-                  role="button"
-                  aria-label="Upload files by clicking or dragging"
-                >
-                  <Upload className="w-8 h-8 text-primary mb-2" />
-                  <span className="text-sm text-muted-foreground mb-1">Drag & drop files here, or <span className="underline text-primary">click to choose</span></span>
-                  <input
-                    type="file"
-                    multiple
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                    tabIndex={-1}
-                  />
-                </div>
-                {visitFiles.length > 0 && (
-                  <ul className="text-xs text-muted-foreground mb-2">
-                    {visitFiles.map((file, i) => (
-                      <li key={i} className="flex items-center gap-2 justify-between border-b border-border last:border-b-0 py-1">
-                        <span className="flex items-center gap-1"><FilePlus className="w-4 h-4 text-primary" /> {file.name}</span>
-                        <button
-                          className="text-destructive hover:text-destructive/80 px-2 py-1 rounded"
-                          onClick={() => handleRemoveFile(i)}
-                          aria-label={`Remove file ${file.name}`}
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="flex gap-2 mt-2">
-                  <AIAssistant context={`lead:${prospectId}|step:prospect visited`} />
-                  <button
-                    className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 font-semibold flex-1"
-                    onClick={() => setShowVisitModal(false)}
-                  >
-                    Save & Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <VisitStep
+            open={showVisitModal}
+            onClose={() => setShowVisitModal(false)}
+            prospectId={prospectId || ''}
+            prospectName={prospect.name || ''}
+            visitComment={visitComment}
+            setVisitComment={setVisitComment}
+            visitFiles={visitFiles}
+            setVisitFiles={setVisitFiles}
+          />
           {/* Layout Step Sheet */}
-          {showLayoutSheet && (
-            <SpacePlanSheet open={showLayoutSheet} onClose={() => setShowLayoutSheet(false)} prospectName={prospect?.name || ''} />
-          )}
+          <LayoutStep
+            open={showLayoutSheet}
+            onClose={() => setShowLayoutSheet(false)}
+            prospectName={prospect.name || ''}
+          />
+          {/* Proposal Step Sheet */}
+          <ProposalStep
+            open={showProposalSheet}
+            onClose={() => setShowProposalSheet(false)}
+            prospectName={prospect.name || ''}
+          />
+          {/* MAF Step Sheet */}
+          <MAFStep
+            open={showMAFSheet}
+            onClose={() => setShowMAFSheet(false)}
+            prospectName={prospect.name || ''}
+          />
+          {/* Onboarding Step Sheet */}
+          <OnboardingStep
+            open={showOnboardingSheet}
+            onClose={() => setShowOnboardingSheet(false)}
+            prospectName={prospect.name || ''}
+          />
           {/* Block Layout Modal */}
           {showBlockModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">

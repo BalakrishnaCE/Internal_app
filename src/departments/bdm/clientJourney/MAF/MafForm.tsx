@@ -7,5 +7,4 @@ const MafForm: React.FC = () => (
   </div>
 );
 
-export default MafForm;
-
+export default MafForm; 

@@ -13,7 +13,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Home, ClipboardList, Users, UserCircle } from "lucide-react";
+import { Home, ClipboardList, Users, UserCircle, BarChart2 } from "lucide-react";
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../assets/Novel.png';
 
@@ -21,6 +21,7 @@ const navItems = [
   { title: "Dashboard", url: "/bdm/dashboard", icon: Home },
   { title: "Tasks", url: "/bdm/tasks", icon: ClipboardList },
   { title: "Prospects", url: "/bdm/prospects", icon: Users },
+  { title: "Reports", url: "/bdm/reports", icon: BarChart2 },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
