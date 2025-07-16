@@ -94,15 +94,8 @@ const ExistingClientsList: React.FC = () => {
   );
 
   return (
-    <div className="mx-auto py-6 px-2 sm:py-10 sm:px-4 bg-background text-foreground min-h-screen relative">
-      <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-primary mb-1">Clients</h1>
-          <p className="text-muted-foreground text-base sm:text-lg">List of all clients managed by BDM</p>
-        </div>
-      </header>
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4 items-stretch sm:items-end">
+    <div className="mx-auto py-2 px-2 sm:py-4 sm:px-4 bg-background text-foreground min-h-screen relative">
+      <div className="flex flex-col sm:flex-row gap-2 mb-2 items-stretch sm:items-end">
         <div className="flex gap-2">
           {statusOptions.map(opt => (
             <button

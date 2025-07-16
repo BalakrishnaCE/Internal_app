@@ -84,17 +84,17 @@ const getComparison = (current: number, previous: number) => {
       </span>
     );
   } else if (current < previous) {
-    return (
+  return (
       <span className="flex items-center text-red-600 text-sm font-medium gap-1">
         <ArrowDownRight className="w-4 h-4" />
         -{previous - current}
-      </span>
+                </span>
     );
   } else {
     return (
       <span className="text-gray-500 text-sm font-medium">No change</span>
-    );
-  }
+  );
+}
 };
 
 const Reports: React.FC = () => {
@@ -121,20 +121,12 @@ const Reports: React.FC = () => {
             AI Overview
           </button>
         </div>
-        <h1
-          className="text-4xl sm:text-5xl font-extrabold mb-2 text-black drop-shadow tracking-tight"
-        >
-          Reports Overview
-        </h1>
-        <p className="text-muted-foreground text-base sm:text-lg">
-          A quick summary of today’s followups, missed followups, and rental escalations with daily and monthly comparisons.
-        </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {/* Today's Followup Card */}
         <div
           className="bg-white rounded-2xl shadow-lg p-6 border border-border flex flex-col items-center cursor-pointer hover:bg-muted/30 transition"
-          onClick={() => navigate('/bdm/tasks')}
+          onClick={() => navigate('/bdm/tasks?tab=today')}
         >
           <CheckCircle className="w-10 h-10 text-green-600 mb-2" />
           <h2 className="text-lg font-bold mb-1 text-center">Today's Followups</h2>
@@ -145,7 +137,7 @@ const Reports: React.FC = () => {
         {/* Missed Followup Card */}
         <div
           className="bg-white rounded-2xl shadow-lg p-6 border border-border flex flex-col items-center cursor-pointer hover:bg-muted/30 transition"
-          onClick={() => navigate('/bdm/tasks')}
+          onClick={() => navigate('/bdm/tasks?tab=missed')}
         >
           <AlertCircle className="w-10 h-10 text-yellow-600 mb-2" />
           <h2 className="text-lg font-bold mb-1 text-center">Missed Followups</h2>
@@ -156,7 +148,7 @@ const Reports: React.FC = () => {
         {/* Rental Escalation Card */}
         <div
           className="bg-white rounded-2xl shadow-lg p-6 border border-border flex flex-col items-center cursor-pointer hover:bg-muted/30 transition"
-          onClick={() => navigate('/bdm/tasks')}
+          onClick={() => navigate('/bdm/tasks?tab=escalation')}
         >
           <TrendingUp className="w-10 h-10 text-purple-700 mb-2" />
           <h2 className="text-lg font-bold mb-1 text-center">Rental Escalations</h2>

@@ -51,6 +51,21 @@ export const TaskList: React.FC<TaskListProps> = ({
   const [showReschedule, setShowReschedule] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<{ [id: string]: string }>({});
 
+  // Pagination logic
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const totalPages = Math.ceil(tasks.length / pageSize);
+  const paginatedTasks = tasks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  React.useEffect(() => {
+    // Reset to first page if tasks change and current page is out of range
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [tasks, totalPages]);
+
   return (
     <section className="bg-card/80 rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
       {title && (
@@ -60,7 +75,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         </div>
       )}
       <ul className="space-y-3 sm:space-y-4">
-        {tasks.map(task => (
+        {paginatedTasks.map(task => (
           <li
             key={task.id}
             className={`flex flex-col gap-3 sm:flex-row sm:items-center bg-background rounded-lg shadow p-3 sm:p-4 hover:shadow-md transition-shadow border border-border ${onTaskClick ? 'cursor-pointer hover:bg-muted/30' : ''}`}
@@ -235,6 +250,37 @@ export const TaskList: React.FC<TaskListProps> = ({
           </li>
         ))}
       </ul>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            className="px-3 py-1 rounded text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-gray-100 focus:outline-none active:bg-gray-200"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            style={{ border: 'none' }}
+          >
+            Previous
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              className={`px-3 py-1 rounded text-sm cursor-pointer transition-colors focus:outline-none active:bg-gray-200 hover:bg-gray-100 ${currentPage === i + 1 ? 'bg-primary text-primary-foreground' : ''}`}
+              onClick={() => handlePageChange(i + 1)}
+              style={{ border: 'none' }}
+            >
+              {i + 1}
+            </button>
+          ))}
+          <button
+            className="px-3 py-1 rounded text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:bg-gray-100 focus:outline-none active:bg-gray-200"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            style={{ border: 'none' }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </section>
   );
 }; 

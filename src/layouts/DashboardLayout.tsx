@@ -2,6 +2,7 @@ import React from 'react';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
+import { AIAssistant } from '@/components/AIAssistant';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <main >
         {children}
         </main>
+        <AIAssistant context="global" placement="floating" />
       </SidebarInset>
      
       

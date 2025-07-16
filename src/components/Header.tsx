@@ -9,6 +9,7 @@ const sectionMap = {
   tasks: 'Tasks',
   prospects: 'Prospects',
   'claim-leads': 'Claim Leads',
+  reports: 'Reports',
 };
 
 type SectionKey = keyof typeof sectionMap;

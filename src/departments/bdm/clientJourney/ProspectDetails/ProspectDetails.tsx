@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle, Mic, Square, FileText, FilePlus2, Building2, MapPin, ListPlus, Loader2, Clock, Hourglass, Check, Send, ThumbsUp, Download, MoreVertical, Ban, AlertTriangle, Bookmark, Lock, Sparkles } from 'lucide-react';
+import { CheckCircle, Circle, ArrowRight, FilePlus, Upload, X, MessageCircle, Mic, Square, FileText, FilePlus2, Building2, MapPin, ListPlus, Loader2, Clock, Hourglass, Check, Send, ThumbsUp, Download, MoreVertical, Ban, AlertTriangle, Bookmark, Lock, Sparkles, Lightbulb } from 'lucide-react';
 import { AIAssistant } from '@/components/AIAssistant';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
@@ -10,50 +10,51 @@ import VoiceNoteRecorderInline from '../shared/VoiceNoteRecorderInline';
 import ProposalStep from '../Proposals/ProposalStep';
 import MAFStep from '../MAF/MAFStep';
 import OnboardingStep from '../Onboarding/OnboardingStep';
+import { fetchProspectJourneyDetails } from '../../API/nagashree';
 
 // Example prospects data (sync with Dashboard)
-const prospects = [
-  {
-    id: 'p1',
-    name: 'Sarah Johnson',
-    company: 'Acme Corp',
-    date: '2024-06-01',
-    status: 'Completed',
-    initials: 'SJ',
-  },
-  {
-    id: 'p2',
-    name: 'Michael Chen',
-    company: 'Globex Inc',
-    date: '2024-06-02',
-    status: 'In Progress',
-    initials: 'MC',
-  },
-  {
-    id: 'p3',
-    name: 'David Rodriguez',
-    company: 'Initech',
-    date: '2024-06-03',
-    status: 'To Do',
-    initials: 'DR',
-  },
-  {
-    id: 'p4',
-    name: 'Priya Patel',
-    company: 'Umbrella Corp',
-    date: '2024-06-04',
-    status: 'Completed',
-    initials: 'PP',
-  },
-  {
-    id: 'p5',
-    name: 'Aisha Khan',
-    company: 'Wayne Enterprises',
-    date: '2024-06-05',
-    status: 'In Progress',
-    initials: 'AK',
-  },
-];
+// const prospects = [
+//   {
+//     id: 'LEADID00332102',
+//     name: 'Sarah Johnson',
+//     company: 'Acme Corp',
+//     date: '2024-06-01',
+//     status: 'Completed',
+//     initials: 'SJ',
+//   },
+//   {
+//     id: 'LEADID00332377',
+//     name: 'Michael Chen',
+//     company: 'Globex Inc',
+//     date: '2024-06-02',
+//     status: 'In Progress',
+//     initials: 'MC',
+//   },
+//   {
+//     id: 'p3',
+//     name: 'David Rodriguez',
+//     company: 'Initech',
+//     date: '2024-06-03',
+//     status: 'To Do',
+//     initials: 'DR',
+//   },
+//   {
+//     id: 'p4',
+//     name: 'Priya Patel',
+//     company: 'Umbrella Corp',
+//     date: '2024-06-04',
+//     status: 'Completed',
+//     initials: 'PP',
+//   },
+//   {
+//     id: 'p5',
+//     name: 'Aisha Khan',
+//     company: 'Wayne Enterprises',
+//     date: '2024-06-05',
+//     status: 'In Progress',
+//     initials: 'AK',
+//   },
+// ];
 
 const steps = [
   { key: 'visit', label: 'Visit' },
@@ -63,8 +64,6 @@ const steps = [
   { key: 'onboarding', label: 'Onboarding' },
 ];
 
-// Mock: which steps are completed for this prospect
-const mockCompleted = ['visit', 'layout'];
 // Mock: last comment and files for summary
 const mockLastComment = 'Discussed requirements and shared initial layout.';
 const mockFiles = ['layout.pdf'];
@@ -302,11 +301,12 @@ const ProspectDetails: React.FC = () => {
   const [showProposalSheet, setShowProposalSheet] = useState(false);
   const [showMAFSheet, setShowMAFSheet] = useState(false);
   const [showOnboardingSheet, setShowOnboardingSheet] = useState(false);
+  // State: which steps are completed for this prospect
+  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
 
-  // Find the prospect by ID
-  const prospect = prospects.find(p => p.id === prospectId);
-
-  // Available layouts (from mockFiles)
+  // State for prospect data from API
+  const [prospect, setProspect] = useState<any | null>(null);
+  // Available layouts (from mockFiles, or from API if available)
   const availableLayouts = mockFiles;
 
   // Handler for file input
@@ -355,6 +355,23 @@ const ProspectDetails: React.FC = () => {
     setSelectedLayout('');
   };
 
+  React.useEffect(() => {
+    if (prospectId) {
+      fetchProspectJourneyDetails(prospectId).then((result) => {
+        // result is expected to be an array, take the first item
+        const journey = Array.isArray(result) && result.length > 0 ? result[0] : null;
+        console.log('API journey:', journey);
+        setProspect(journey);
+        const steps: string[] = [];
+        if (journey && journey.leasing_status === 'Visited Prospect') {
+          steps.push('visit');
+        }
+        // Only mark 'visit' as completed based on leasing_status
+        setCompletedSteps(steps);
+      });
+    }
+  }, [prospectId]);
+
   if (!prospect) {
     return (
       <div className="w-full max-w-2xl mx-auto py-8 px-2 sm:px-6 bg-background text-foreground min-h-screen flex flex-col items-center justify-center">
@@ -364,10 +381,11 @@ const ProspectDetails: React.FC = () => {
     );
   }
 
+  console.log('Lead ID:', prospectId);
   // Compose a summary string for the AI assistant
-  const aiContext = `lead:${prospectId}|summary:${prospect.name},${prospect.company},${prospect.status}|steps:${mockCompleted.join(',')}|lastComment:${mockLastComment}|files:${mockFiles.join(',')}`;
+  const aiContext = `lead:${prospectId}|summary:${prospect.name},${prospect.company},${prospect.status}|steps:${completedSteps.join(',')}|lastComment:${mockLastComment}|files:${mockFiles.join(',')}`;
   // Compose AI summary (mocked for now)
-  const aiSummary = `Here's a quick summary of your journey with ${prospect.name} so far: Steps completed: ${mockCompleted.join(', ')}. Last comment: "${mockLastComment}". Files shared: ${mockFiles.join(', ')}.`;
+  const aiSummary = `Here's a quick summary of your journey with ${prospect.name} so far: Steps completed: ${completedSteps.join(', ')}. Last comment: "${mockLastComment}". Files shared: ${mockFiles.join(', ')}.`;
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -380,7 +398,7 @@ const ProspectDetails: React.FC = () => {
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
                 <button
-                  className="p-2 rounded-full bg-muted hover:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="p-2 rounded-full bg-muted hover:bg-muted/80 focus:outline-none focus:ring-0 focus:border-0"
                   aria-label="Actions"
                 >
                   <MoreVertical className="w-6 h-6 text-primary" />
@@ -410,7 +428,7 @@ const ProspectDetails: React.FC = () => {
           <div className="mb-8">
             <div className="flex flex-col gap-4">
               {steps.map((step, idx) => {
-                const completed = mockCompleted.includes(step.key);
+                const completed = completedSteps.includes(step.key);
                 const isVisit = step.key === 'visit';
                 const isLayout = step.key === 'layout';
                 const isProposal = step.key === 'proposal';
@@ -420,8 +438,8 @@ const ProspectDetails: React.FC = () => {
                   <button
                     key={step.key}
                     className={`flex items-center w-full px-4 py-3 rounded-lg border transition-colors shadow-sm text-left gap-3
-                      ${completed ? 'bg-success/10 border-success/20' : 'bg-card border-border'}
-                      hover:bg-muted ${isVisit || isLayout || isProposal || isMAF || isOnboarding ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
+                      bg-card border-border
+                      ${!completed ? 'hover:bg-muted' : ''} ${isVisit || isLayout || isProposal || isMAF || isOnboarding ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
                     onClick={() => {
                       if (isVisit) setShowVisitModal(true);
                       if (isLayout) setShowLayoutSheet(true);
@@ -516,46 +534,42 @@ const ProspectDetails: React.FC = () => {
         </div>
         {/* Sidebar/Bottom Prospect Summary & AI Assistant */}
         <div className="w-full md:w-96 md:sticky md:top-8 md:self-start static z-auto bg-transparent flex flex-col gap-4 mt-6 md:mt-0 overflow-y-auto flex-shrink-0">
-          <div className="bg-background rounded-xl shadow border border-border p-4 flex flex-col gap-4">
-            {/* AI Summary Chat Bubble */}
-            <div className="mb-2">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-5 h-5 text-blue-400" />
-                <span className="font-semibold text-blue-700 text-base">AI Overview</span>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-2xl px-5 py-4 text-sm text-blue-900 dark:text-blue-100 shadow-sm flex items-start gap-2">
-                <span className="mt-1"><Sparkles className="w-5 h-5 text-blue-400" /></span>
-                <span className="whitespace-pre-line">{aiSummary}</span>
-              </div>
+          {/* AI Summary Container (styled like tasks tab) */}
+          <aside className="w-full bg-white border border-gray-200 rounded-xl shadow-md p-6">
+            <h2 className="text-xl font-bold text-black mb-1 flex items-center gap-2 border-b-2 border-blue-500 pb-1">
+              <Lightbulb className="w-6 h-6 text-blue-500" aria-hidden="true" />
+              AI Summary
+            </h2>
+            <p className="text-sm text-muted-foreground mb-3">Get a quick, actionable overview of this prospect's journey and status.</p>
+            <div className="">
+              <div className="font-semibold mb-2 text-base">AI Insights</div>
+              <div className="text-sm whitespace-pre-line">{aiSummary}</div>
             </div>
-            {/* Client Factual Summary */}
+          </aside>
+          {/* Client Info Container */}
+          <div className="bg-background rounded-xl shadow border border-border p-4 flex flex-col gap-4">
             <div className="flex items-center gap-4 mb-2">
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-xl font-bold text-primary">
-                {prospect.initials}
+                {prospect.initials ? String(prospect.initials).charAt(0).toUpperCase() : ''}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-lg sm:text-xl truncate">{prospect.name}</div>
                 <div className="text-muted-foreground text-sm truncate">{prospect.company}</div>
-                <div className="text-muted-foreground text-xs">Visited: {prospect.date}</div>
+                <div className="text-muted-foreground text-xs">Visited: {prospect.visit_date}</div>
               </div>
             </div>
             <span
               className={`px-3 py-1 rounded-full text-xs font-semibold border self-start
-                ${prospect.status === 'Completed' ? 'bg-primary/10 text-primary border-primary/20' :
-                  prospect.status === 'In Progress' ? 'bg-warning/10 text-warning border-warning/20' :
+                ${prospect.leasing_status === 'Visited Prospect' ? 'bg-primary/10 text-primary border-primary/20' :
+                  prospect.leasing_status === 'Active Prospect' ? 'bg-warning/10 text-warning border-warning/20' :
                   'bg-muted text-muted-foreground border-border'}`}
             >
-              {prospect.status}
+              {prospect.leasing_status}
             </span>
             <div className="text-xs text-muted-foreground mt-2">
-              <div><span className="font-semibold">Steps completed:</span> {mockCompleted.join(', ') || 'None'}</div>
+              <div><span className="font-semibold">Steps completed:</span> {completedSteps.join(', ') || 'None'}</div>
               <div><span className="font-semibold">Last comment:</span> {mockLastComment || 'No comments yet.'}</div>
               <div><span className="font-semibold">Files:</span> {mockFiles.length > 0 ? mockFiles.join(', ') : 'No files uploaded.'}</div>
-            </div>
-            {/* AI Assistant Input */}
-            <div className="bg-muted rounded-lg p-3 flex flex-col gap-2 mt-2">
-              <div className="font-semibold text-base mb-1">AI Assistant</div>
-              <AIAssistant context={aiContext} />
             </div>
           </div>
         </div>
